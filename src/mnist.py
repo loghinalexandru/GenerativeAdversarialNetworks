@@ -6,16 +6,14 @@ import matplotlib.gridspec as gridspec
 import os
 from batchup import data_source
 
-
 iterations = 10000
 batch_size = 120
 (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
 real_data = tf.placeholder(tf.float32, shape = [None, 784])
 fake_data = tf.placeholder(tf.float32, shape = [None, 100])
-test_data = tf.placeholder(tf.float32, shape = [None, 100])
 
 def random_sample(size):
-    return np.random.uniform(-1., 1., size=[size,100])
+    return np.random.normal(-1., 1., size=[size,100])
 
 def plot(samples):
     fig = plt.figure(figsize=(4, 4))
@@ -32,16 +30,17 @@ def plot(samples):
 
     return fig
 
-def generator_network(x):
+def generator_network(input_data):
     with tf.variable_scope("generator", reuse=tf.AUTO_REUSE):
-        x = tf.layers.dense(x, 128, activation=tf.nn.relu)
+        x = tf.layers.dense(input_data, 128, activation=tf.nn.leaky_relu)
         x = tf.layers.dense(x, 784)
         x = tf.nn.sigmoid(x)
     return x
 
-def discriminator_network(x):
+def discriminator_network(input_data):
     with tf.variable_scope("discriminator", reuse=tf.AUTO_REUSE):
-        x = tf.layers.dense(x, 128, activation=tf.nn.relu)
+        x = tf.layers.dense(input_data, 128, activation=tf.nn.leaky_relu)
+        x = tf.layers.dense(x, 10, activation=tf.nn.leaky_relu)
         x = tf.layers.dense(x, 1)
         x = tf.nn.sigmoid(x)
     return x
@@ -50,7 +49,7 @@ if __name__ == "__main__":
     result_real = discriminator_network(real_data)
     result_fake = discriminator_network(generator_network(fake_data))
 
-    loss_discriminator = -tf.reduce_mean(tf.log(result_real) + tf.log(1 - result_fake))
+    loss_discriminator = -tf.reduce_mean(tf.log(result_real) + tf.log(1. - result_fake))
     loss_generator = -tf.reduce_mean(tf.log(result_fake))
 
     discriminator_solver = tf.train.AdamOptimizer().minimize(loss_discriminator)
@@ -59,13 +58,17 @@ if __name__ == "__main__":
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
-    train_images = (train_images.astype(np.float32) - 127.5) / 127.5
+    train_images = (2  * train_images.astype(np.float32) / 255) - 1
     train_images = [np.reshape(np.array(val), (1,784)).flatten() for val in train_images]
-    batches = data_source.ArrayDataSource([np.array(train_images)], repeats=iterations)
+    five_dataset = []
+    for index,label in enumerate(train_labels):
+        if(label == 5):
+            five_dataset.append(train_images[index])
+    batches = data_source.ArrayDataSource([np.array(five_dataset)], repeats=iterations)
     i = 0
-    for batch in batches.batch_iterator(batch_size, False):
+    for batch in batches.batch_iterator(batch_size, True):
         if i % 1000 == 0:
-            samples = sess.run(generator_network(test_data), feed_dict={test_data : random_sample(16)})
+            samples = sess.run(generator_network(fake_data), feed_dict={fake_data : random_sample(16)})
             fig = plot(samples)
             plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
             plt.close(fig)
@@ -74,4 +77,3 @@ if __name__ == "__main__":
         _, generator_curr = sess.run([generator_solver, loss_generator], feed_dict={fake_data : random_sample(batch_size)})
         print('D loss: {:.4}'. format(discriminator_curr))
         i=i+1
-        
