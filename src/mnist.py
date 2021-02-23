@@ -6,14 +6,14 @@ import matplotlib.gridspec as gridspec
 import os
 from batchup import data_source
 
-iterations = 10000
+iterations = 50
 batch_size = 120
 (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
 real_data = tf.placeholder(tf.float32, shape = [None, 784])
 fake_data = tf.placeholder(tf.float32, shape = [None, 100])
 
 def random_sample(size):
-    return np.random.normal(-1., 1., size=[size,100])
+    return np.random.normal(0, 1., size=[size,100])
 
 def plot(samples):
     fig = plt.figure(figsize=(4, 4))
@@ -32,17 +32,16 @@ def plot(samples):
 
 def generator_network(input_data):
     with tf.variable_scope("generator", reuse=tf.AUTO_REUSE):
-        x = tf.layers.dense(input_data, 128, activation=tf.nn.leaky_relu)
-        x = tf.layers.dense(x, 784)
-        x = tf.nn.sigmoid(x)
+        x = tf.layers.dense(input_data, 128, activation=tf.nn.relu)
+        x = tf.layers.dense(x, 784, activation=tf.nn.sigmoid)
     return x
 
 def discriminator_network(input_data):
     with tf.variable_scope("discriminator", reuse=tf.AUTO_REUSE):
-        x = tf.layers.dense(input_data, 128, activation=tf.nn.leaky_relu)
-        x = tf.layers.dense(x, 10, activation=tf.nn.leaky_relu)
-        x = tf.layers.dense(x, 1)
-        x = tf.nn.sigmoid(x)
+        x = tf.layers.dense(input_data, 128, activation=tf.nn.relu)
+        x = tf.layers.dense(x, 64, activation=tf.nn.relu)
+        x = tf.layers.dense(x, 32, activation=tf.nn.relu)
+        x = tf.layers.dense(x, 1, activation=tf.nn.sigmoid)
     return x
 
 if __name__ == "__main__":
@@ -52,19 +51,17 @@ if __name__ == "__main__":
     loss_discriminator = -tf.reduce_mean(tf.log(result_real) + tf.log(1. - result_fake))
     loss_generator = -tf.reduce_mean(tf.log(result_fake))
 
-    discriminator_solver = tf.train.AdamOptimizer().minimize(loss_discriminator)
-    generator_solver = tf.train.AdamOptimizer().minimize(loss_generator)
+    disc_vars = [var for var in tf.trainable_variables() if var.name.startswith("disc")]
+    gen_vars = [var for var in tf.trainable_variables() if var.name.startswith("gen")]
+
+    discriminator_solver = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5).minimize(loss_discriminator, var_list=disc_vars)
+    generator_solver = tf.train.AdamOptimizer(learning_rate=0.0002, beta1=0.5).minimize(loss_generator, var_list=gen_vars)
 
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
-    sess.run(tf.local_variables_initializer())
-    train_images = (2  * train_images.astype(np.float32) / 255) - 1
+    train_images = train_images.astype(np.float32) / 255
     train_images = [np.reshape(np.array(val), (1,784)).flatten() for val in train_images]
-    five_dataset = []
-    for index,label in enumerate(train_labels):
-        if(label == 5):
-            five_dataset.append(train_images[index])
-    batches = data_source.ArrayDataSource([np.array(five_dataset)], repeats=iterations)
+    batches = data_source.ArrayDataSource([np.array(train_images)], repeats=iterations)
     i = 0
     for batch in batches.batch_iterator(batch_size, True):
         if i % 1000 == 0:
