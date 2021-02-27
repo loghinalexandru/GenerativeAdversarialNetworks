@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
-from keras.layers import InputLayer, Dense , Dropout, LeakyReLU
+from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten
 
 latent_dim = 100
+max_input_size = 10000
 batch_size = 24
 epochs = 100
 images_path = "../dataset"
@@ -20,8 +21,9 @@ def load_data():
         if(os.path.isdir(os.path.join(images_path, entry))):
             new_folder_path = os.path.join(images_path, entry)
         for image in os.listdir(os.path.join(images_path, entry)):
+            if(len(input_data) == max_input_size):
+                return
             input_data.append(mathplt.image.imread(os.path.join(new_folder_path, image)))
-            return
 
 def random_sample(size):
     return np.random.normal(-1., 1., size=[size,latent_dim])
@@ -37,24 +39,31 @@ def plot(samples):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+        plt.imshow(sample.reshape(128,128,3), cmap='Greys_r')
 
     return fig
 
 def build_generator():
     model = Sequential()
-    model.add(Dense(128, input_dim=latent_dim))
+    model.add(Dense(32*32*256, input_dim=latent_dim))
+    model.add(Reshape((32, 32, 256)))
+    model.add(Conv2DTranspose(128, (5,5), padding='same', strides=(1,1)))
+    model.add(BatchNormalization())
     model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(784, activation='tanh'))
+    model.add(Conv2DTranspose(64, (5,5), padding='same', strides=(2,2)))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU(alpha=0.1))
+    model.add(Conv2DTranspose(3, (5,5), padding='same', strides=(2,2)))
 
     return model
 
 def build_discriminator():
     model = Sequential()
-    model.add(Dense(128, input_dim=784))
+    model.add(Conv2D(256, (5,5), padding='same',  input_shape=[128,128,3]))
     model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(64))
+    model.add(Conv2D(128, (5,5), padding='same'))
     model.add(LeakyReLU(alpha=0.1))
+    model.add(Flatten())
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
 
@@ -73,33 +82,29 @@ def build_gan_model(generator, discriminator):
 
 if __name__ == "__main__":
     load_data()
-    print(train_set)
-    print(np.shape(train_set[0]))
-    # (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
-    # train_images = (2  * train_images.astype(np.float32) / 255) - 1
-    # train_images = [np.reshape(np.array(val), (1,784)).flatten() for val in train_images]
 
-    # i = 0
-    # generator = build_generator()
-    # discriminator = build_discriminator()
-    # gan_model = build_gan_model(generator, discriminator)
+    # Map to [-1,1]
+    train_images = (2  * np.array(input_data) / 255) - 1
 
-    # batches = data_source.ArrayDataSource([np.array(train_images)], repeats=epochs)
+    i = 0
+    generator = build_generator()
+    discriminator = build_discriminator()
+    gan_model = build_gan_model(generator, discriminator)
 
-    # for batch in batches.batch_iterator(batch_size, True):
-    #     if i % 100 == 0:
-    #         samples = generator.predict(random_sample(16))
-    #         fig = plot(samples)
-    #         plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
-    #         plt.close(fig)
+    batches = data_source.ArrayDataSource([np.array(train_images)], repeats=epochs)
+
+    for batch in batches.batch_iterator(batch_size, True):
+        if i % 100 == 0:
+            samples = generator.predict(random_sample(16))
+            fig = plot(samples)
+            plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            plt.close(fig)
         
-    #     real_data_input, real_data_label = batch[0] , np.ones(batch_size)
-    #     fake_data_input, fake_data_label = generator.predict(random_sample(batch_size)), np.zeros(batch_size)
+        real_data_input, real_data_label = batch[0] , np.ones(batch_size)
+        fake_data_input, fake_data_label = generator.predict(random_sample(batch_size)), np.zeros(batch_size)
 
-    #     d_real_loss = discriminator.train_on_batch(real_data_input, real_data_label)
-    #     d_fake_loss = discriminator.train_on_batch(fake_data_input, fake_data_label)
+        d_real_loss = discriminator.train_on_batch(real_data_input, real_data_label)
+        d_fake_loss = discriminator.train_on_batch(fake_data_input, fake_data_label)
 
-    #     gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.ones(batch_size))
-    #     print(d_real_loss, d_fake_loss, gan_loss)
-
-    #     i=i+1
+        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.ones(batch_size))
+        print(d_real_loss, d_fake_loss, gan_loss)
