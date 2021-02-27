@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
-from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten
+from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
+from keras import activations
 
 latent_dim = 100
 max_input_size = 10000
-batch_size = 24
+batch_size = 18
 epochs = 100
 images_path = "../dataset"
 input_data = []
@@ -29,6 +30,8 @@ def random_sample(size):
     return np.random.normal(-1., 1., size=[size,latent_dim])
 
 def plot(samples):
+    # Rescale to [0,1] from [-1,1]
+    samples = (samples + 1.) / 2.
     fig = plt.figure(figsize=(4, 4))
     gs = gridspec.GridSpec(4, 4)
     gs.update(wspace=0.05, hspace=0.05)
@@ -39,7 +42,7 @@ def plot(samples):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(sample.reshape(128,128,3), cmap='Greys_r')
+        plt.imshow(sample.reshape(128,128,3))
 
     return fig
 
@@ -54,6 +57,7 @@ def build_generator():
     model.add(BatchNormalization())
     model.add(LeakyReLU(alpha=0.1))
     model.add(Conv2DTranspose(3, (5,5), padding='same', strides=(2,2)))
+    model.add(Activation(activations.tanh))
 
     return model
 
@@ -94,11 +98,10 @@ if __name__ == "__main__":
     batches = data_source.ArrayDataSource([np.array(train_images)], repeats=epochs)
 
     for batch in batches.batch_iterator(batch_size, True):
-        if i % 100 == 0:
-            samples = generator.predict(random_sample(16))
-            fig = plot(samples)
-            plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
-            plt.close(fig)
+        samples = generator.predict(random_sample(16))
+        fig = plot(samples)
+        plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+        plt.close(fig)
         
         real_data_input, real_data_label = batch[0] , np.ones(batch_size)
         fake_data_input, fake_data_label = generator.predict(random_sample(batch_size)), np.zeros(batch_size)
@@ -108,3 +111,4 @@ if __name__ == "__main__":
 
         gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.ones(batch_size))
         print(d_real_loss, d_fake_loss, gan_loss)
+        i = i + 1
