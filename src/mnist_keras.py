@@ -12,7 +12,7 @@ batch_size = 128
 epochs = 100
 
 def random_sample(size):
-    return np.random.normal(-1., 1., size=[size,latent_dim])
+    return np.random.normal(0, 1., size=[size,latent_dim])
 
 def plot(samples):
     fig = plt.figure(figsize=(4, 4))
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     batches = data_source.ArrayDataSource([np.array(train_images)], repeats=epochs)
 
     for batch in batches.batch_iterator(batch_size, True):
-        if i % 100 == 0:
+        if i % 1000 == 0:
             samples = generator.predict(random_sample(16))
             fig = plot(samples)
             plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
