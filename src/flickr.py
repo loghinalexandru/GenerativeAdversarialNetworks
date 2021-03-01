@@ -10,7 +10,7 @@ from keras.models import Sequential
 from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
 from keras import activations
 
-latent_dim = 1024
+latent_dim = 100
 batch_size = 256
 max_input_size = 10000
 epochs = 100
@@ -119,6 +119,6 @@ if __name__ == "__main__":
         d_real_loss = discriminator.train_on_batch(real_data_input, real_data_label)
         d_fake_loss = discriminator.train_on_batch(fake_data_input, fake_data_label)
 
-        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.repeat(np.random.uniform(0.3,0.7), batch_size)
+        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.repeat(np.random.uniform(0.3,0.7), batch_size))
         print(d_real_loss, d_fake_loss, gan_loss)
         i = i + 1

@@ -97,6 +97,6 @@ if __name__ == "__main__":
         d_real_loss = discriminator.train_on_batch(real_data_input, real_data_label)
         d_fake_loss = discriminator.train_on_batch(fake_data_input, fake_data_label)
 
-        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.repeat(np.random.uniform(0.3,0.7), batch_size)
+        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.repeat(np.random.uniform(0.3,0.7), batch_size))
         print(d_real_loss + d_fake_loss, gan_loss)
         i = i + 1
