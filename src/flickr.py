@@ -48,20 +48,20 @@ def plot(samples):
 def build_generator():
     model = Sequential()
     model.add(Dense(8*8*256, use_bias=False, input_dim=latent_dim))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Reshape((8, 8, 256)))
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(2,2)))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(1,1)))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(2,2)))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(1,1)))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2DTranspose(128, (3,3), use_bias=False, padding='same', strides=(2,2)))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2DTranspose(64, (3,3), use_bias=False, padding='same', strides=(2,2)))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2DTranspose(3, (3,3), use_bias=False, padding='same', strides=(1,1), activation='tanh'))
 
     return model
@@ -69,16 +69,16 @@ def build_generator():
 def build_discriminator():
     model = Sequential()
     model.add(Conv2D(64, (5,5), strides=(2,2), use_bias=False, padding='same',  input_shape=[128,128,3]))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2D(128, (5,5), strides=(2,2),  use_bias=False,  padding='same'))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2D(256, (5,5), strides=(2,2),  use_bias=False,  padding='same'))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Conv2D(512, (5,5), strides=(2,2), use_bias=False, padding='same'))
-    model.add(LeakyReLU(0.2))
+    model.add(LeakyReLU())
     model.add(Flatten())
     model.add(Dense(1))
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0003, beta_1=0.5))
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
 
     return model
 
@@ -87,7 +87,7 @@ def build_gan_model(generator, discriminator):
     model = Sequential()
     model.add(generator)
     model.add(discriminator)
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0003, beta_1=0.5))
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
 
     return model
 
