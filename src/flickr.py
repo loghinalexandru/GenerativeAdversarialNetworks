@@ -51,7 +51,7 @@ def build_generator():
     model.add(LeakyReLU(0.2))
     model.add(Reshape((8, 8, 256)))
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(2,2)))
-    model.add(LeakyReLU())
+    model.add(LeakyReLU(0.2))
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(1,1)))
     model.add(LeakyReLU(0.2))
     model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(2,2)))
