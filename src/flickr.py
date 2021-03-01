@@ -113,12 +113,12 @@ if __name__ == "__main__":
             plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
             plt.close(fig)
         
-        real_data_input, real_data_label = batch , np.ones(batch_size)
-        fake_data_input, fake_data_label = generator.predict(random_sample(batch_size)), np.zeros(batch_size)
+        real_data_input, real_data_label = batch , np.repeat(np.random.uniform(0.3,0.7), batch_size)
+        fake_data_input, fake_data_label = generator.predict(random_sample(batch_size)), np.repeat(np.random.uniform(-0.7,-0.3), batch_size)
 
         d_real_loss = discriminator.train_on_batch(real_data_input, real_data_label)
         d_fake_loss = discriminator.train_on_batch(fake_data_input, fake_data_label)
 
-        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.ones(batch_size))
+        gan_loss = gan_model.train_on_batch(random_sample(batch_size), np.repeat(np.random.uniform(0.3,0.7), batch_size)
         print(d_real_loss, d_fake_loss, gan_loss)
         i = i + 1
