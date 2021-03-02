@@ -1,5 +1,6 @@
 import os
 import tensorflow as tf
+import tensorflow_addons as tfa
 from tensorflow import keras
 import numpy as np
 import matplotlib as mathplt
@@ -8,6 +9,8 @@ import matplotlib.gridspec as gridspec
 from batchup import data_source
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
+from tensorflow_addons.layers import SpectralNormalization
+from tensorflow.keras.initializers import RandomNormal
 
 latent_dim = 1024
 batch_size = 128
@@ -15,6 +18,7 @@ max_input_size = 10000
 epochs = 100
 images_path = "./dataset"
 input_data = []
+init = RandomNormal(stddev=0.02)
 
 def load_data():
     for entry in os.listdir(images_path):
@@ -50,35 +54,35 @@ def build_generator():
     model.add(Dense(8*8*256, use_bias=False, input_dim=latent_dim))
     model.add(LeakyReLU())
     model.add(Reshape((8, 8, 256)))
-    model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(2,2)))
+    model.add(Conv2DTranspose(256, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(2,2)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(1,1)))
+    model.add(Conv2DTranspose(256, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(1,1)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(2,2)))
+    model.add(Conv2DTranspose(256, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(2,2)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(256, (3,3), use_bias=False, padding='same', strides=(1,1)))
+    model.add(Conv2DTranspose(256, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(1,1)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(128, (3,3), use_bias=False, padding='same', strides=(2,2)))
+    model.add(Conv2DTranspose(128, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(2,2)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(64, (3,3), use_bias=False, padding='same', strides=(2,2)))
+    model.add(Conv2DTranspose(64, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(2,2)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(3, (3,3), use_bias=False, padding='same', strides=(1,1), activation='tanh'))
+    model.add(Conv2DTranspose(3, (3,3), use_bias=False, kernel_initializer=init, padding='same', strides=(1,1), activation='tanh'))
 
     return model
 
 def build_discriminator():
     model = Sequential()
-    model.add(Conv2D(64, (5,5), strides=(2,2), use_bias=False, padding='same',  input_shape=[128,128,3]))
+    model.add(SpectralNormalization(Conv2D(64, (5,5), strides=(2,2), use_bias=False, kernel_initializer=init, padding='same',  input_shape=[128,128,3])))
     model.add(LeakyReLU())
-    model.add(Conv2D(128, (5,5), strides=(2,2),  use_bias=False,  padding='same'))
+    model.add(SpectralNormalization(Conv2D(128, (5,5), strides=(2,2),  use_bias=False, kernel_initializer=init, padding='same')))
     model.add(LeakyReLU())
-    model.add(Conv2D(256, (5,5), strides=(2,2),  use_bias=False,  padding='same'))
+    model.add(SpectralNormalization(Conv2D(256, (5,5), strides=(2,2),  use_bias=False, kernel_initializer=init, padding='same')))
     model.add(LeakyReLU())
-    model.add(Conv2D(512, (5,5), strides=(2,2), use_bias=False, padding='same'))
+    model.add(SpectralNormalization(Conv2D(512, (5,5), strides=(2,2), use_bias=False, kernel_initializer=init, padding='same')))
     model.add(LeakyReLU())
     model.add(Flatten())
     model.add(Dense(1))
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0004, beta_1=0.5))
 
     return model
 
@@ -106,7 +110,7 @@ if __name__ == "__main__":
 
     for batch in batches.batch_iterator(batch_size, True):
 
-        if i % 10 == 0:
+        if i % 20 == 0:
             samples = generator.predict(random_sample(16))
             fig = plot(samples)
             plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
