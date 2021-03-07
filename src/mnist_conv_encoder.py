@@ -35,30 +35,30 @@ def plot(samples):
 
     return fig
 
-
 def build_generator():
     model = Sequential()
-    model.add(Dense(32, input_dim=latent_dim))
+    model.add(Dense(7*7*256, use_bias=False, input_dim=latent_dim))
     model.add(LeakyReLU())
-    model.add(Dropout(0.5))
-    model.add(Dense(784))
+    model.add(Reshape((7, 7, 256)))
+    model.add(Conv2DTranspose(10, (3,3), use_bias=False, padding='same', strides=(1,1)))
     model.add(LeakyReLU())
-    model.add(Dense(14*14, activation='tanh'))
-    model.add(Reshape((14,14,1)))
+    model.add(Conv2DTranspose(32, (3,3), use_bias=False, padding='same', strides=(2,2)))
+    model.add(LeakyReLU())
+    model.add(Conv2DTranspose(1, (3,3), use_bias=False, padding='same', strides=(1,1), activation='tanh'))
 
     return model
 
 def build_discriminator():
     model = Sequential()
-    model.add(Dense(128, input_shape = [14,14,1]))
+    model.add(Conv2D(64, (5,5), strides=(2,2), use_bias=False, padding='same',  input_shape=[14,14,1]))
     model.add(LeakyReLU())
-    model.add(Dropout(0.5))
-    model.add(Dense(10))
+    model.add(Conv2D(128, (5,5), strides=(2,2),  use_bias=False,  padding='same'))
     model.add(LeakyReLU())
-    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (5,5), strides=(2,2), use_bias=False, padding='same'))
+    model.add(LeakyReLU())
     model.add(Flatten())
     model.add(Dense(1))
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam())
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
 
     return model
 
@@ -68,7 +68,7 @@ def build_gan_model(generator, discriminator):
     model = Sequential()
     model.add(generator)
     model.add(discriminator)
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam())
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
 
     return model
 
@@ -79,13 +79,13 @@ if __name__ == "__main__":
     (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
     train_images = (2  * np.array(train_images) / 255) - 1
 
-    train_data = []
+    # train_data = []
 
-    for (index,entry) in enumerate(train_labels):
-        if(entry == 1):
-            train_data.append(train_images[index])
+    # for (index,entry) in enumerate(train_labels):
+    #     if(entry == 1):
+    #         train_data.append(train_images[index])
 
-    train_data = np.array(train_data)
+    # train_data = np.array(train_data)
 
     autoencoder = Autoencoder(10)
     autoencoder.predict(np.reshape(train_images[0], (-1,28,28,1)))
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     autoencoder.encoder.trainable = False
     autoencoder.decoder.trainable = False
 
-    train_images_encoded = np.array(autoencoder.encoder(np.reshape(train_data, (-1,28,28,1))))
+    train_images_encoded = np.array(autoencoder.encoder(np.reshape(train_images, (-1,28,28,1))))
     print(np.shape(train_images_encoded[0]))
 
     i = 0
