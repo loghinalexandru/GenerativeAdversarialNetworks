@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
-from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
+from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, UpSampling2D, Conv2D, Flatten, Activation
 from keras import activations
 
-latent_dim = 3
-batch_size = 128
+latent_dim = 2
+batch_size = 32
 epochs = 10
 
 def plot(samples):
@@ -34,24 +34,28 @@ def plot(samples):
 class Autoencoder(tf.keras.Model):
 
   def build_encoder(self):
-      model = Sequential()
-      model.add(Conv2D(16, (3,3), padding='same', strides=(2,2), input_shape=[28,28,1]))
-      model.add(LeakyReLU())
-      model.add(Conv2D(16, (3,3), padding='same', strides=(1,1)))
-      model.add(LeakyReLU())
-      model.add(Conv2D(1, (3,3), padding='same', activation='tanh', strides=(1,1)))
+    model = Sequential()
+    model.add(Conv2D(32, (5,5), padding="same", activation="relu"))
+    model.add(Conv2D(64, (5,5), strides=(2,2), activation="relu", padding="same"))
+    model.add(Conv2D(128, (5,5), strides=(2,2), activation="relu", padding="same"))
+    model.add(Conv2D(256, (5,5), strides=(2,2), activation="relu", padding="same"))
+    model.add(Conv2D(512, (5,5), strides=(2,2), activation="relu", padding="same"))
+    model.add(Flatten())
+    model.add(Dense(self.latent_dim, activation="tanh"))
       
-      return model
+    return model
 
   def build_decoder(self):
-      model = Sequential()
-      model.add(Conv2DTranspose(16, (3,3), strides=(2,2), padding='same'))
-      model.add(LeakyReLU())
-      model.add(Conv2DTranspose(32, (3,3), strides=(1,1),  padding='same'))
-      model.add(LeakyReLU())
-      model.add(Conv2D(1, (3,3), activation='tanh', padding='same'))
+    model = Sequential()
+    model.add(Dense(6272))
+    model.add(Reshape((7, 7, 128)))
+    model.add(Conv2D(64, (5,5), activation="relu", padding="same"))
+    model.add(UpSampling2D())
+    model.add(Conv2D(32, (5,5), activation="relu", padding="same"))
+    model.add(UpSampling2D())
+    model.add(Conv2D(1, (5,5), activation="tanh", padding="same"))
       
-      return model
+    return model
 
   def __init__(self, latent_dim):
     super(Autoencoder, self).__init__()
@@ -80,10 +84,10 @@ if __name__ == "__main__":
                 print(np.shape(encoded_image))
                 decoded_image = autoencoder.decoder(encoded_image)
                 plt.imshow(np.reshape(decoded_image, (28,28,1)), cmap='Greys_r')
-                plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+                plt.savefig('autoencoder/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
                 plt.close()
             i = i + 1
             loss = autoencoder.train_on_batch(batch[0].reshape(-1,28,28,1), batch[0].reshape(-1,28,28,1))
             print(loss)
-        autoencoder.encoder.save_weights("encoder.h5")
-        autoencoder.decoder.save_weights("decoder.h5")
+        autoencoder.encoder.save_weights("encoder_vanilla.h5")
+        autoencoder.decoder.save_weights("decoder_vanilla.h5")

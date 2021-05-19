@@ -11,6 +11,7 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
 from tensorflow_addons.layers import SpectralNormalization
 from tensorflow.keras.initializers import RandomNormal
+from autoencoder import Autoencoder
 
 latent_dim = 1024
 batch_size = 128
