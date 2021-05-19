@@ -89,5 +89,5 @@ if __name__ == "__main__":
             i = i + 1
             loss = autoencoder.train_on_batch(batch[0].reshape(-1,28,28,1), batch[0].reshape(-1,28,28,1))
             print(loss)
-        autoencoder.encoder.save_weights("encoder_vanilla.h5")
-        autoencoder.decoder.save_weights("decoder_vanilla.h5")
+        autoencoder.encoder.save_weights("encoder.h5")
+        autoencoder.decoder.save_weights("decoder.h5")

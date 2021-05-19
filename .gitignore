@@ -130,3 +130,6 @@ dmypy.json
 
 #Dataset
 *.png
+
+#Weights
+*.h5

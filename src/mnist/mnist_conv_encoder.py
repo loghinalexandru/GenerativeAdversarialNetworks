@@ -46,20 +46,20 @@ def build_generator():
     model.add(LeakyReLU())
     model.add(Conv2DTranspose(10, (3,3), use_bias=False, padding='same', strides=(1,1)))
     model.add(LeakyReLU())
-    model.add(Conv2DTranspose(1, (3,3), use_bias=False, padding='same', strides=(1,1), activation='tanh'))
+    model.add(Conv2DTranspose(1, (3,3), use_bias=False, padding='same', strides=(1,1)))
+    model.add(LeakyReLU())
+    model.add(Flatten())
+    model.add(Dense(10, activation="tanh"))
 
     return model
 
 def build_discriminator():
     model = Sequential()
-    model.add(Conv2D(64, (5,5), strides=(2,2), use_bias=False, padding='same',  input_shape=[7,7,1]))
-    model.add(LeakyReLU())
-    model.add(Conv2D(128, (5,5), strides=(2,2),  use_bias=False,  padding='same'))
-    model.add(LeakyReLU())
-    model.add(Conv2D(128, (5,5), strides=(2,2), use_bias=False, padding='same'))
-    model.add(LeakyReLU())
-    model.add(Flatten())
-    model.add(Dense(1))
+    model.add(Dense(512, input_dim=10))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Dense(256))
+    model.add(LeakyReLU(alpha=0.2))
+    model.add(Dense(1, activation="sigmoid"))
     model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
 
     return model
@@ -112,9 +112,9 @@ if __name__ == "__main__":
             fig = plot(autoencoder.decoder(samples))
             plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
             plt.close(fig)
-            fig = plot(samples)
-            plt.savefig('out/{}_encoded.png'.format(str(i).zfill(3)), bbox_inches='tight')
-            plt.close(fig)
+            # fig = plot(samples)
+            # plt.savefig('out/{}_encoded.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            # plt.close(fig)
         
         real_data_input, real_data_label = batch[0], np.ones(batch_size)
         fake_data_input, fake_data_label = generator.predict(random_sample(batch_size)), np.zeros(batch_size)
