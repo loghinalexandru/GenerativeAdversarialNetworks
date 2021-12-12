@@ -1,5 +1,6 @@
-import tensorflow as tf
 import os
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
 import keras
 import numpy as np
 import matplotlib as mathplt
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
+from keras.datasets import mnist
 from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
 from keras import activations
 
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     # load_data()
 
     # Map to [-1,1]
-    (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
+    (train_images, train_labels), (test_images, test_labels) = mnist.load_data(path="mnist.npz")
     train_images = (2  * np.array(train_images) / 255) - 1
 
     i = 0

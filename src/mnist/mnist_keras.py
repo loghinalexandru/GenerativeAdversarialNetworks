@@ -1,10 +1,13 @@
-import tensorflow as tf
+import os
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
 import keras
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
+from keras.datasets import mnist
 from keras.layers import InputLayer, Dense , Dropout, LeakyReLU
 
 latent_dim = 100
@@ -60,7 +63,7 @@ def build_gan_model(generator, discriminator):
     return model
 
 if __name__ == "__main__":
-    (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
+    (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
     train_images = (2  * train_images.astype(np.float32) / 255) - 1
     train_images = [np.reshape(np.array(val), (1,784)).flatten() for val in train_images]
 
