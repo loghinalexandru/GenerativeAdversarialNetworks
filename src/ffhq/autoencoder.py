@@ -1,31 +1,25 @@
 import os
-import tensorflow as tf
-from tensorflow import keras
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
+import keras
 import numpy as np
 import matplotlib as mathplt
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, UpSampling2D, Flatten, Activation, MaxPool2D
-from tensorflow.keras.initializers import RandomNormal
+from keras.models import Sequential
+from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, UpSampling2D, Flatten, Activation, MaxPool2D
+from keras.initializers import RandomNormal
+from keras.preprocessing.image import ImageDataGenerator
 
 batch_size = 16
-max_input_size = 10000
-epochs = 1000
-images_path = "./dataset"
+epochs = 10
+images_path = "../../dataset"
 
-def load_data():
-    input_data = []
-    for entry in os.listdir(images_path):
-        if(os.path.isdir(os.path.join(images_path, entry))):
-            new_folder_path = os.path.join(images_path, entry)
-        for image in os.listdir(os.path.join(images_path, entry)):
-            if(len(input_data) == max_input_size):
-                return input_data
-            input_data.append(mathplt.image.imread(os.path.join(new_folder_path, image)))
-
-    return input_data
+def rescale_img(img):
+    img = img.astype(np.float32) / 255.0
+    img = (img - 0.5) * 2
+    return img
 
 def plot(samples):
     samples = (samples + 1.) / 2.
@@ -43,7 +37,7 @@ def plot(samples):
 
     return fig
 
-class Autoencoder(tf.keras.Model):
+class Autoencoder(keras.Model):
   def build_encoder(self):
     model = Sequential()
     model.add(Conv2D(16, (5,5), padding="same"))
@@ -97,23 +91,24 @@ class Autoencoder(tf.keras.Model):
     return decoded
 
 if __name__ == "__main__":
-    train_images = load_data()
-    train_images = (2  * np.array(train_images)) - 1
+    autoencoder = Autoencoder(491)
+    autoencoder.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
+    generator = ImageDataGenerator(preprocessing_function=rescale_img)
+    train_data = generator.flow_from_directory(images_path, target_size=(128, 128), batch_size=batch_size, class_mode=None)
 
-    autoencoder = Autoencoder(128)
-    autoencoder.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0002, beta_1=0.5))
     for iterations in range(epochs):
-        print_iteration = True
-        batches = data_source.ArrayDataSource([train_images])
-        for batch in batches.batch_iterator(batch_size, True):
-            if(print_iteration):
-                encoded_images = autoencoder.encoder(batch[0].reshape(batch_size,128,128,3))
-                decoded_images = autoencoder.decoder(encoded_images)
+        batches = 0
+        for batch in train_data:
+            if(batches >= 70000 / batch_size):
+                encoded_images = autoencoder.encoder.predict(batch)
+                decoded_images = autoencoder.decoder.predict(encoded_images)
                 plot(decoded_images)
-                plt.savefig('out/{}.png'.format(str(iterations).zfill(3)), bbox_inches='tight')
+                plt.savefig('out_autoencoder/{}.png'.format(str(iterations).zfill(3)), bbox_inches='tight')
                 plt.close()
                 print_iteration = False
-            loss = autoencoder.train_on_batch(batch[0].reshape(-1,128,128,3), batch[0].reshape(-1,128,128,3))
-        print(loss)
-        autoencoder.encoder.save_weights("encoder.h5")
-        autoencoder.decoder.save_weights("decoder.h5")
+                break
+            loss = autoencoder.train_on_batch(batch, batch)
+            print(loss)
+            batches = batches + 1
+        autoencoder.encoder.save_weights("encoder_full.h5")
+        autoencoder.decoder.save_weights("decoder_full.h5")
