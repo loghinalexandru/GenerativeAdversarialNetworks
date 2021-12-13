@@ -13,7 +13,7 @@ from keras.initializers import RandomNormal
 from keras.preprocessing.image import ImageDataGenerator
 
 batch_size = 16
-epochs = 10
+epochs = 20
 images_path = "../../dataset"
 
 def rescale_img(img):
@@ -43,17 +43,14 @@ class Autoencoder(keras.Model):
     model.add(Conv2D(16, (5,5), padding="same"))
     model.add(LeakyReLU())
     model.add(MaxPool2D())
-    model.add(Dropout(0.25))
     model.add(Conv2D(25, (5,5), strides=(1,1), padding="same"))
     model.add(LeakyReLU()) 
     model.add(MaxPool2D())
     model.add(Flatten())
     model.add(Dense(16*16*25))
     model.add(LeakyReLU())
-    model.add(Dropout(0.25))
     model.add(Dense(16*16*3))
     model.add(LeakyReLU())
-    model.add(Dropout(0.25))
     model.add(Dense(self.latent_dim, activation="tanh"))
       
     return model
@@ -62,12 +59,10 @@ class Autoencoder(keras.Model):
     model = Sequential()
     model.add(Dense(16*16*3, input_dim=self.latent_dim))
     model.add(LeakyReLU())
-    model.add(Dropout(0.25))
     model.add(Dense(16*16*3))
     model.add(LeakyReLU())
     model.add(Dense(32*32*25))
     model.add(LeakyReLU())
-    model.add(Dropout(0.25))
     model.add(Reshape((32, 32, 25)))
     model.add(Conv2DTranspose(15, (5,5), padding='same', strides=(1,1)))
     model.add(LeakyReLU())
@@ -110,5 +105,5 @@ if __name__ == "__main__":
             loss = autoencoder.train_on_batch(batch, batch)
             print(loss)
             batches = batches + 1
-        autoencoder.encoder.save_weights("encoder_full.h5")
-        autoencoder.decoder.save_weights("decoder_full.h5")
+        autoencoder.encoder.save_weights("encoder_full_491.h5")
+        autoencoder.decoder.save_weights("decoder_full_491.h5")
