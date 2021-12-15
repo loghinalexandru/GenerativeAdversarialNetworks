@@ -13,7 +13,7 @@ from keras.initializers import RandomNormal
 from keras.preprocessing.image import ImageDataGenerator
 
 batch_size = 16
-epochs = 20
+epochs = 1000
 images_path = "../../dataset"
 
 def rescale_img(img):
@@ -44,8 +44,9 @@ class Autoencoder(keras.Model):
     model.add(LeakyReLU())
     model.add(MaxPool2D())
     model.add(Conv2D(25, (5,5), strides=(1,1), padding="same"))
+    model.add(LeakyReLU())
+    model.add(Conv2D(3, (5,5), strides=(1,1), padding="same"))
     model.add(LeakyReLU()) 
-    model.add(MaxPool2D())
     model.add(Flatten())
     model.add(Dense(16*16*25))
     model.add(LeakyReLU())
@@ -86,7 +87,7 @@ class Autoencoder(keras.Model):
     return decoded
 
 if __name__ == "__main__":
-    autoencoder = Autoencoder(491)
+    autoencoder = Autoencoder(245)
     autoencoder.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
     generator = ImageDataGenerator(preprocessing_function=rescale_img)
     train_data = generator.flow_from_directory(images_path, target_size=(128, 128), batch_size=batch_size, class_mode=None)
@@ -105,5 +106,5 @@ if __name__ == "__main__":
             loss = autoencoder.train_on_batch(batch, batch)
             print(loss)
             batches = batches + 1
-        autoencoder.encoder.save_weights("encoder_full_491.h5")
-        autoencoder.decoder.save_weights("decoder_full_491.h5")
+        autoencoder.encoder.save_weights("encoder_full_245.h5")
+        autoencoder.decoder.save_weights("decoder_full_245.h5")
