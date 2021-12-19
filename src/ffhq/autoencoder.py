@@ -13,7 +13,7 @@ from keras.initializers import RandomNormal
 from keras.preprocessing.image import ImageDataGenerator
 
 batch_size = 16
-epochs = 1000
+epochs = 20
 images_path = "../../dataset"
 
 def rescale_img(img):
@@ -91,6 +91,11 @@ if __name__ == "__main__":
     autoencoder.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
     generator = ImageDataGenerator(preprocessing_function=rescale_img)
     train_data = generator.flow_from_directory(images_path, target_size=(128, 128), batch_size=batch_size, class_mode=None)
+
+    if(os.path.exists("encoder_full_245.h5") and os.path.exists("decoder_full_245.h5")):
+      autoencoder.predict(np.reshape(train_data.next(), (-1,128,128,3)))
+      autoencoder.encoder.load_weights("encoder_full_245.h5")
+      autoencoder.decoder.load_weights("decoder_full_245.h5")
 
     for iterations in range(epochs):
         batches = 0
