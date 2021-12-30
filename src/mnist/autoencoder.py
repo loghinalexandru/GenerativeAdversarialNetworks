@@ -1,5 +1,6 @@
-import tensorflow as tf
 import os
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
 import keras
 import numpy as np
 import matplotlib as mathplt
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
+from keras.datasets import mnist
 from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, UpSampling2D, Conv2D, Flatten, Activation
 from keras import activations
 
@@ -31,7 +33,7 @@ def plot(samples):
 
     return fig
 
-class Autoencoder(tf.keras.Model):
+class Autoencoder(keras.Model):
 
   def build_encoder(self):
     model = Sequential()
@@ -67,7 +69,7 @@ class Autoencoder(tf.keras.Model):
     return decoded
 
 if __name__ == "__main__":
-    (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
+    (train_images, train_labels), (test_images, test_labels) = mnist.load_data(path="mnist.npz")
     train_images = (2  * np.array(train_images) / 255) - 1
 
     autoencoder = Autoencoder(latent_dim)
