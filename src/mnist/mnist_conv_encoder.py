@@ -1,5 +1,6 @@
-import tensorflow as tf
 import os
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
 import keras
 import numpy as np
 import matplotlib as mathplt
@@ -8,11 +9,11 @@ import matplotlib.gridspec as gridspec
 from batchup import data_source
 from keras.models import Sequential
 from keras.layers import InputLayer, Dense , Dropout, LeakyReLU, BatchNormalization, Reshape, Conv2DTranspose, Conv2D, Flatten, Activation
-from keras import activations
+from keras.datasets import mnist
 from autoencoder import Autoencoder
 
 latent_dim = 100
-batch_size = 28
+batch_size = 16
 epochs = 1000
 
 def random_sample(size):
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     # load_data()
 
     # Map to [-1,1]
-    (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data(path="mnist.npz")
+    (train_images, train_labels), (test_images, test_labels) = mnist.load_data(path="mnist.npz")
     train_images = (2  * np.array(train_images) / 255) - 1
 
     # train_data = []
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     autoencoder.encoder.trainable = False
     autoencoder.decoder.trainable = False
 
-    train_images_encoded = np.array(autoencoder.encoder(np.reshape(train_images, (-1,28,28,1))))
+    train_images_encoded = np.array(autoencoder.encoder.predict(np.reshape(train_images, (-1,28,28,1))))
     print(np.shape(train_images_encoded))
 
     i = 0
@@ -109,8 +110,8 @@ if __name__ == "__main__":
     for batch in batches.batch_iterator(batch_size, True):
         if i % 100 == 0:
             samples = generator.predict(random_sample(16))
-            fig = plot(autoencoder.decoder(samples))
-            plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            fig = plot(autoencoder.decoder.predict(samples))
+            plt.savefig('out_encoder/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
             plt.close(fig)
             # fig = plot(samples)
             # plt.savefig('out/{}_encoded.png'.format(str(i).zfill(3)), bbox_inches='tight')
