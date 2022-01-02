@@ -8,7 +8,7 @@ import matplotlib as mathplt
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from keras.models import Sequential
-from keras.layers import Dense, LeakyReLU, Reshape, Flatten, Conv2DTranspose, UpSampling2D, Conv2D
+from keras.layers import Dense, LeakyReLU, Reshape, Flatten, Conv2DTranspose,Conv2D
 from keras.initializers import RandomNormal
 from keras.preprocessing.image import ImageDataGenerator
 from autoencoder_conv import Autoencoder
@@ -20,8 +20,8 @@ epochs = 100
 images_path = "../../dataset"
 encoder_weights = "encoder_conv.h5"
 decoder_weights = "decoder_conv.h5"
-generator_weights = "generator_autoencoder_conv.h5"
-discriminator_weights = "discriminator_autoencoder_conv.h5"
+generator_weights = "generator_autoencoder.h5"
+discriminator_weights = "discriminator_autoencoder.h5"
 output_folder = "out_conv_gan"
 init = RandomNormal(stddev=0.02)
 
@@ -53,9 +53,9 @@ def plot(samples):
 
 def build_generator():
     model = Sequential()
-    model.add(Dense(16*16*16, input_dim=latent_dim))
+    model.add(Dense(16*16*32, input_dim=latent_dim))
     model.add(LeakyReLU())
-    model.add(Reshape((16, 16, 16)))
+    model.add(Reshape((16, 16, 32)))
     model.add(Conv2DTranspose(256, (3,3), padding='same', strides=(1,1)))
     model.add(LeakyReLU())
     model.add(Conv2DTranspose(128, (3,3), padding='same', strides=(1,1)))
@@ -66,13 +66,13 @@ def build_generator():
 
 def build_discriminator():
     model = Sequential()
-    model.add(Conv2D(256, (3,3), strides=(2,2), padding='same',  input_shape=[16,16,16]))
+    model.add(Conv2D(256, (3,3), strides=(1,1), padding='same',  input_shape=[16,16,16]))
     model.add(LeakyReLU())
-    model.add(Conv2D(128, (3,3), strides=(2,2), padding='same'))
+    model.add(Conv2D(128, (3,3), strides=(1,1), padding='same'))
     model.add(LeakyReLU())
     model.add(Flatten())
     model.add(Dense(1, activation="sigmoid"))
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0005, beta_1=0.5))
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
 
     return model
 
@@ -81,7 +81,7 @@ def build_gan_model(generator, discriminator):
     model = Sequential()
     model.add(generator)
     model.add(discriminator)
-    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0005, beta_1=0.5))
+    model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
 
     return model
 
@@ -100,9 +100,9 @@ if __name__ == "__main__":
     discriminator = build_discriminator()
     gan_model = build_gan_model(generator, discriminator)
 
-    # if(os.path.exists(generator_weights) and os.path.exists(discriminator_weights)):
-    #     generator.load_weights(generator_weights)
-    #     discriminator.load_weights(discriminator_weights)
+    if(os.path.exists(generator_weights) and os.path.exists(discriminator_weights)):
+        generator.load_weights(generator_weights)
+        discriminator.load_weights(discriminator_weights)
 
     for iteration in range(epochs):
         batches = 0
