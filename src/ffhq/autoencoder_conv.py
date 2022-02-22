@@ -17,7 +17,7 @@ epochs = 100
 images_path = "../../dataset"
 encoder_weights = "encoder_conv.h5"
 decoder_weights = "decoder_conv.h5"
-output_folder = "out_autoencoder_conv"
+output_folder = "out_autoencoder_conv_new"
 
 
 def rescale_img(img):
@@ -76,15 +76,16 @@ class Autoencoder(keras.Model):
     return decoded
 
 if __name__ == "__main__":
+    mse_loss = open(r"autoencoder_mse_loss.txt", "w+")
     autoencoder = Autoencoder(245)
     autoencoder.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.5))
     generator = ImageDataGenerator(preprocessing_function=rescale_img)
     train_data = generator.flow_from_directory(images_path, target_size=(128, 128), batch_size=batch_size, class_mode=None)
 
-    if(os.path.exists(encoder_weights) and os.path.exists(decoder_weights)):
-      autoencoder.predict(np.reshape(train_data.next(), (-1,128,128,3)))
-      autoencoder.encoder.load_weights(encoder_weights)
-      autoencoder.decoder.load_weights(decoder_weights)
+    # if(os.path.exists(encoder_weights) and os.path.exists(decoder_weights)):
+    #   autoencoder.predict(np.reshape(train_data.next(), (-1,128,128,3)))
+    #   autoencoder.encoder.load_weights(encoder_weights)
+    #   autoencoder.decoder.load_weights(decoder_weights)
 
     for iterations in range(epochs):
         batches = 0
@@ -98,7 +99,7 @@ if __name__ == "__main__":
                 print_iteration = False
                 break
             loss = autoencoder.train_on_batch(batch, batch)
-            print(loss)
+            mse_loss.write(str(loss) + '\n')
             batches = batches + 1
-        autoencoder.encoder.save_weights(encoder_weights)
-        autoencoder.decoder.save_weights(decoder_weights)
+        # autoencoder.encoder.save_weights(encoder_weights)
+        # autoencoder.decoder.save_weights(decoder_weights)

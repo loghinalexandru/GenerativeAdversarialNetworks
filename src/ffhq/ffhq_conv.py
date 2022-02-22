@@ -5,7 +5,7 @@ os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 import keras
 import numpy as np
 import matplotlib as mathplt
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import matplotlib.gridspec as gridspec
 from keras.models import Sequential
 from keras.layers import Dense, LeakyReLU, Reshape, Flatten, Conv2DTranspose,Conv2D
@@ -22,7 +22,7 @@ encoder_weights = "encoder_conv.h5"
 decoder_weights = "decoder_conv.h5"
 generator_weights = "generator_autoencoder.h5"
 discriminator_weights = "discriminator_autoencoder.h5"
-output_folder = "out_conv_gan"
+output_folder = "out_conv_gan_test"
 init = RandomNormal(stddev=0.02)
 
 def rescale_img(img):
@@ -32,6 +32,16 @@ def rescale_img(img):
 
 def random_sample(size):
     return np.random.normal(0., 1., size=[size,latent_dim])
+
+def generate_image_from_vector(input_file):
+    file_handler = open(input_file , "r+")
+    data = file_handler.readlines()
+    test_vector = [float(x.strip()) for x in data]
+    test_vector  = np.reshape(test_vector, (1,100))
+    generated_code = generator.predict(test_vector)
+    result_image = autoencoder.decoder.predict(generated_code)[0]
+    result_image = (result_image + 1.) / 2.
+    mathplt.image.imsave("test_vector.png", result_image)
 
 def plot(samples):
     # Rescale to [0,1] from [-1,1]
@@ -86,6 +96,9 @@ def build_gan_model(generator, discriminator):
     return model
 
 if __name__ == "__main__":
+    d_real_file = open(r"gan_hybrid_d_real.txt", "w+")
+    d_fake_file = open(r"gan_hybrid_d_fake.txt", "w+")
+    gen_file = open(r"gan_hybrid_gen.txt", "w+")
     autoencoder = Autoencoder(encoder_dim)
     datagen = ImageDataGenerator(preprocessing_function=rescale_img)
     train_data = datagen.flow_from_directory(images_path, target_size=(128, 128), batch_size=batch_size, class_mode=None)
@@ -100,9 +113,11 @@ if __name__ == "__main__":
     discriminator = build_discriminator()
     gan_model = build_gan_model(generator, discriminator)
 
-    if(os.path.exists(generator_weights) and os.path.exists(discriminator_weights)):
-        generator.load_weights(generator_weights)
-        discriminator.load_weights(discriminator_weights)
+    # if(os.path.exists(generator_weights) and os.path.exists(discriminator_weights)):
+    #     generator.load_weights(generator_weights)
+    #     discriminator.load_weights(discriminator_weights)
+
+    generate_image_from_vector("test_vector.txt")
 
     for iteration in range(epochs):
         batches = 0
@@ -114,14 +129,18 @@ if __name__ == "__main__":
             d_real_loss = discriminator.train_on_batch(real_data_input, real_data_label)
             d_fake_loss = discriminator.train_on_batch(fake_data_input, fake_data_label)
 
+            d_real_file.write(str(d_real_loss) + "\n")
+            d_fake_file.write(str(d_fake_loss) + "\n")
+
             gan_loss = gan_model.train_on_batch(random_sample(len(batch)), np.ones(len(batch)))
             print(d_real_loss, d_fake_loss, gan_loss)
+            gen_file.write(str(gan_loss) + "\n")
 
             if(batches >= train_data.samples / batch_size):
                 break
 
-        generator.save_weights(generator_weights)
-        discriminator.save_weights(discriminator_weights)
+        # generator.save_weights(generator_weights)
+        # discriminator.save_weights(discriminator_weights)
         samples = np.array(generator.predict(random_sample(16)))
         fig = plot(autoencoder.decoder.predict(samples))
         plt.savefig(output_folder + '/{}.png'.format(str(iteration).zfill(3)), bbox_inches='tight')

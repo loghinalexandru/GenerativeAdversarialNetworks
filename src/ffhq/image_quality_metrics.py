@@ -6,8 +6,8 @@ import argparse
 import matplotlib as mathplt
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-f", "--first", required=True, help="Directory of the image that will be compared")
-ap.add_argument("-s", "--second", required=True, help="Directory of the image that will be used to compare")
+ap.add_argument("-f", "--first", required=True)
+ap.add_argument("-s", "--second", required=True)
 args = vars(ap.parse_args())
 
 grayA = io.imread(args["first"], as_gray=True)

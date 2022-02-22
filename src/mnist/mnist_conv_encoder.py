@@ -36,6 +36,13 @@ def plot(samples):
 
     return fig
 
+def plot_single(sample):
+    # Rescale to [0,1] from [-1,1]
+    sample = (sample + 1.) / 2.
+    plt.figure(figsize=(0.37,0.37))
+    plt.imshow(sample, cmap='Greys_r')
+    plt.axis('off')
+
 def build_generator():
     model = Sequential()
     model.add(Dense(7*7*256, use_bias=False, input_dim=latent_dim))
@@ -109,9 +116,9 @@ if __name__ == "__main__":
 
     for batch in batches.batch_iterator(batch_size, True):
         if i % 100 == 0:
-            samples = generator.predict(random_sample(16))
-            fig = plot(autoencoder.decoder.predict(samples))
-            plt.savefig('out_encoder/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            samples = generator.predict(random_sample(1))
+            fig = plot_single(autoencoder.decoder.predict(samples)[0])
+            plt.savefig('out_encoder_single/{}.png'.format(str(i).zfill(3)), bbox_inches='tight', pad_inches=0, transparent=True)
             plt.close(fig)
             # fig = plot(samples)
             # plt.savefig('out/{}_encoded.png'.format(str(i).zfill(3)), bbox_inches='tight')

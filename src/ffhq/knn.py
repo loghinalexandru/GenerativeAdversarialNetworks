@@ -11,7 +11,7 @@ def calculateDistance(i1, i2):
 
 images_path = "../../dataset"
 ap = argparse.ArgumentParser()
-ap.add_argument("-q", "--query", required=True, help="Directory of the image that will be compared")
+ap.add_argument("-q", "--query", required=True)
 args = vars(ap.parse_args())
 
 query_image = mathplt.image.imread(args["query"])[:,:,:3]

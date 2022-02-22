@@ -32,6 +32,14 @@ def plot(samples):
 
     return fig
 
+def plot_single(sample):
+    # Rescale to [0,1] from [-1,1]
+    sample = (sample + 1.) / 2.
+    sample = np.reshape(sample, (28,28))
+    plt.figure(figsize=(0.37,0.37))
+    plt.imshow(sample, cmap='Greys_r')
+    plt.axis('off')
+
 def build_generator():
     model = Sequential()
     model.add(Dense(128, input_dim=latent_dim))
@@ -76,9 +84,9 @@ if __name__ == "__main__":
 
     for batch in batches.batch_iterator(batch_size, True):
         if i % 1000 == 0:
-            samples = generator.predict(random_sample(16))
-            fig = plot(samples)
-            plt.savefig('out/{}.png'.format(str(i).zfill(3)), bbox_inches='tight')
+            samples = generator.predict(random_sample(1))
+            fig = plot_single(samples[0])
+            plt.savefig('out_classic_single/{}.png'.format(str(i).zfill(3)), bbox_inches='tight', pad_inches=0, transparent=True)
             plt.close(fig)
         
         real_data_input, real_data_label = batch[0] , np.ones(batch_size)
